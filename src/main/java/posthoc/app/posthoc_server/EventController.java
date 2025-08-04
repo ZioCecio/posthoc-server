@@ -18,8 +18,11 @@ import posthoc.app.posthoc_server.handlers.AboutHandler;
 import posthoc.app.posthoc_server.handlers.FeaturesHandler;
 import posthoc.app.posthoc_server.handlers.HandlerEntry;
 import posthoc.app.posthoc_server.handlers.RpcHandler;
+import posthoc.app.posthoc_server.handlers.SolveHandler;
 import posthoc.app.posthoc_server.params.AboutParams;
 import posthoc.app.posthoc_server.params.FeatureAlgorithmParams;
+import posthoc.app.posthoc_server.params.FeatureFormatParams;
+import posthoc.app.posthoc_server.params.SolveParams;
 
 @Component
 public class EventController {
@@ -30,6 +33,8 @@ public class EventController {
     public EventController(SocketIOServer server) {
         register("about", AboutParams.class, AboutHandler::getInfo);
         register("features/algorithms", FeatureAlgorithmParams.class, FeaturesHandler::getAlgorithms);
+        register("features/formats", FeatureFormatParams.class, FeaturesHandler::getFormats);
+        register("solve/pathfinding", SolveParams.class, SolveHandler::solveProblem);
 
         server.addConnectListener(client ->
             System.out.printf("🔌 Client connected: %s%n", client.getSessionId())

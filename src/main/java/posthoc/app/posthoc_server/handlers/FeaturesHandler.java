@@ -3,7 +3,9 @@ package posthoc.app.posthoc_server.handlers;
 import java.util.List;
 
 import posthoc.app.posthoc_server.params.FeatureAlgorithmParams;
+import posthoc.app.posthoc_server.params.FeatureFormatParams;
 import posthoc.app.posthoc_server.results.FeatureAlgorithmResult;
+import posthoc.app.posthoc_server.results.FeatureFormatResult;
 
 public class FeaturesHandler {
     public static List<FeatureAlgorithmResult> getAlgorithms(FeatureAlgorithmParams params) {
@@ -12,6 +14,13 @@ public class FeaturesHandler {
             new FeatureAlgorithmResult("idastar", "IDAStar", "Iterative Deepening A-Star"),
             new FeatureAlgorithmResult("lwastar", "LazyWAStar", "Lazy Weighted A-Star"),
             new FeatureAlgorithmResult("ehs", "EHS", "Enhanced Harmony Search")
+        );
+    }
+
+    public static List<FeatureFormatResult> getFormats(FeatureFormatParams params) {
+        return List.of(
+            new FeatureFormatResult("grid", "Grid", "grid"),
+            new FeatureFormatResult("xy", "Xy", "xy")
         );
     }
 }
