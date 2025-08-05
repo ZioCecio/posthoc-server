@@ -21,6 +21,7 @@ import posthoc.app.posthoc_server.handlers.RpcHandler;
 import posthoc.app.posthoc_server.handlers.SolveHandler;
 import posthoc.app.posthoc_server.params.AboutParams;
 import posthoc.app.posthoc_server.params.FeatureAlgorithmParams;
+import posthoc.app.posthoc_server.params.FeatureProblemTypeParams;
 import posthoc.app.posthoc_server.params.FeatureFormatParams;
 import posthoc.app.posthoc_server.params.SolveParams;
 
@@ -33,6 +34,7 @@ public class EventController {
     public EventController(SocketIOServer server) {
         register("about", AboutParams.class, AboutHandler::getInfo);
         register("features/algorithms", FeatureAlgorithmParams.class, FeaturesHandler::getAlgorithms);
+        register("features/problemTypes", FeatureProblemTypeParams.class, FeaturesHandler::getProblemTypes);
         register("features/formats", FeatureFormatParams.class, FeaturesHandler::getFormats);
         register("solve/pathfinding", SolveParams.class, SolveHandler::solveProblem);
 
@@ -46,7 +48,7 @@ public class EventController {
             String method = request.get("method").asText();
             JsonNode paramsNode = request.get("params");
             JsonNode idNode = request.get("id");
-
+            System.out.println("Received request: " + method + ", params: " + paramsNode + ", id: " + idNode);
             HandlerEntry<?, ?> handlerEntry = handlers.get(method);
             if (handlerEntry == null) {
                 return;
