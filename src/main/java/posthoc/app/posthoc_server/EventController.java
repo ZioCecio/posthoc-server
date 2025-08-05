@@ -28,7 +28,7 @@ import posthoc.app.posthoc_server.params.SolveParams;
 public class EventController {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Map<String, HandlerEntry<?, ?>> handlers = new HashMap<>();
-    
+
     @Autowired
     public EventController(SocketIOServer server) {
         register("about", AboutParams.class, AboutHandler::getInfo);
@@ -36,9 +36,7 @@ public class EventController {
         register("features/formats", FeatureFormatParams.class, FeaturesHandler::getFormats);
         register("solve/pathfinding", SolveParams.class, SolveHandler::solveProblem);
 
-        server.addConnectListener(client ->
-            System.out.printf("🔌 Client connected: %s%n", client.getSessionId())
-        );
+        server.addConnectListener(client -> System.out.printf("🔌 Client connected: %s%n", client.getSessionId()));
 
         server.addEventListener("request", ObjectNode.class, this::onRequest);
     }
@@ -50,20 +48,21 @@ public class EventController {
             JsonNode idNode = request.get("id");
 
             HandlerEntry<?, ?> handlerEntry = handlers.get(method);
-            if(handlerEntry == null) {
+            if (handlerEntry == null) {
                 return;
             }
 
             sendResponse(handlerEntry, client, idNode, paramsNode);
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private <P, R> void sendResponse(HandlerEntry<P, R> handlerEntry, SocketIOClient client, JsonNode idNode, JsonNode paramsNode) throws JsonProcessingException, IllegalArgumentException {
+    private <P, R> void sendResponse(HandlerEntry<P, R> handlerEntry, SocketIOClient client, JsonNode idNode,
+            JsonNode paramsNode) throws JsonProcessingException, IllegalArgumentException {
         P params = objectMapper.treeToValue(paramsNode, handlerEntry.paramType);
         R result = handlerEntry.handler.handle(params);
-        
+
         ObjectNode response = objectMapper.createObjectNode();
         response.put("jsonrpc", "2.0");
         response.set("id", idNode);
@@ -73,6 +72,6 @@ public class EventController {
     }
 
     private <P, R> void register(String method, Class<P> paramType, RpcHandler<P, R> handler) {
-        handlers.put(method, new HandlerEntry(paramType, handler));
+        handlers.put(method, new HandlerEntry<P, R>(paramType, handler));
     }
 }
