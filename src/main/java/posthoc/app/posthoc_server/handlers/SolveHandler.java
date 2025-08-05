@@ -2,6 +2,7 @@ package posthoc.app.posthoc_server.handlers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import posthoc.app.posthoc_server.params.SolveInstance;
 import posthoc.app.posthoc_server.params.SolveParams;
@@ -256,51 +257,32 @@ public class SolveHandler {
                 String action = tokens[0];
                 String type;
 
-                switch (action) {
-                    case "move_up":
-                        pos.y += 1;
-                        type = "move";
-                        break;
-                    case "move_down":
-                        pos.y -= 1;
-                        type = "move";
-                        break;
-                    case "move_left":
-                        pos.x -= 1;
-                        type = "move";
-                        break;
-                    case "move_right":
-                        pos.x += 1;
-                        type = "move";
-                        break;
-                    case "move_up_left":
-                        pos.x -= 1;
-                        pos.y += 1;
-                        type = "move";
-                        break;
-                    case "move_up_right":
-                        pos.x += 1;
-                        pos.y += 1;
-                        type = "move";
-                        break;
-                    case "move_down_left":
-                        pos.x -= 1;
-                        pos.y -= 1;
-                        type = "move";
-                        break;
-                    case "move_down_right":
-                        pos.x += 1;
-                        pos.y -= 1;
-                        type = "move";
-                        break;
-                    case "load":
-                        type = "pick";
-                        break;
-                    case "pour":
-                        type = "pour";
-                        break;
-                    default:
-                        continue;
+                Map<String, int[]> directionMap = Map.of(
+                        "move_up", new int[] { 0, 1 },
+                        "move_down", new int[] { 0, -1 },
+                        "move_left", new int[] { -1, 0 },
+                        "move_right", new int[] { 1, 0 },
+                        "move_up_left", new int[] { -1, 1 },
+                        "move_up_right", new int[] { 1, 1 },
+                        "move_down_left", new int[] { -1, -1 },
+                        "move_down_right", new int[] { 1, -1 });
+
+                if (directionMap.containsKey(action)) {
+                    int[] delta = directionMap.get(action);
+                    pos.x += delta[0];
+                    pos.y += delta[1];
+                    type = "move";
+                } else {
+                    switch (action) {
+                        case "load":
+                            type = "pick";
+                            break;
+                        case "pour":
+                            type = "pour";
+                            break;
+                        default:
+                            continue;
+                    }
                 }
 
                 Event event = new Event(
