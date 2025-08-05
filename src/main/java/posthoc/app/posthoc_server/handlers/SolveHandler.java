@@ -1,9 +1,17 @@
 package posthoc.app.posthoc_server.handlers;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+
+import com.hstairs.ppmajal.transition.TransitionGround;
+
+import enhsp2.ENHSP;
+import enhsp2.ENHSPBuilder;
 import posthoc.app.posthoc_server.params.SolveInstance;
 import posthoc.app.posthoc_server.params.SolveParams;
 import posthoc.app.posthoc_server.results.solve.Event;
@@ -21,7 +29,7 @@ class Point {
 
 public class SolveHandler {
     private static String domain = "mt-plant-watering-constrained";
-    private static final String BASE_DIR = "/home/alessandro/Projects/robotica/jpddlplus/";
+    private static final String BASE_DIR = "/home/ziocecio/Documents/Projects/jpddlplus/";
     private static final String JAR_FILE = BASE_DIR + "jpddlplus.jar";
     private static final String DOMAIN_FILE = BASE_DIR + "examples/plant-watering/domain.pddl";
     // private static final String RUN_COMMAND = "java -jar %s -o %s -f %s";
@@ -34,7 +42,41 @@ public class SolveHandler {
             return new SolveResponse(events);
         }
         // otherwise, run the code
+        runCodee(params);
+
         return runCode(params);
+    }
+
+    private static void runCodee(SolveParams params) {
+        String content = getInstanceFile(params);
+
+        System.out.println("Running the following instance file\n" + content + "\n\n\n");
+
+        java.nio.file.Path tempFile;
+        String tempFilePath;
+        try {
+            tempFile = java.nio.file.Files.createTempFile("instance-", ".pddl");
+            java.nio.file.Files.write(tempFile, content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            tempFilePath = tempFile.toAbsolutePath().toString();
+            System.out.println("Instance file written to: " + tempFilePath);
+
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Failed to create/write temp instance file", e);
+        }
+
+        ENHSP solver = new ENHSPBuilder(true)
+            .defaultBuilder()
+            .setDomainFile(DOMAIN_FILE)
+            .setProblemFile(tempFilePath)
+            .buildAndInitialize();
+
+        solver.configurePlanner();
+        solver.parsingDomainAndProblem(null);
+        LinkedList<ImmutablePair<BigDecimal, TransitionGround>> solution = solver.planAndGetSolution();
+
+        for(ImmutablePair<BigDecimal, TransitionGround> element : solution) {
+            System.out.println(element);
+        }
     }
 
     private static SolveResponse runCode(SolveParams params) {
