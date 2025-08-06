@@ -48,7 +48,6 @@ public class EventController {
             String method = request.get("method").asText();
             JsonNode paramsNode = request.get("params");
             JsonNode idNode = request.get("id");
-            System.out.println("Received request: " + method + ", params: " + paramsNode + ", id: " + idNode);
             HandlerEntry<?, ?> handlerEntry = handlers.get(method);
             if (handlerEntry == null) {
                 return;
