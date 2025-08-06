@@ -141,8 +141,8 @@ public class SolveHandler {
         return params.instances == null || params.instances.isEmpty() ||
                 params.instances.get(0).plants == null || params.instances.get(0).taps == null ||
                 params.instances.get(0).plants.length == 0 || params.instances.get(0).taps.length == 0 ||
-                params.instances.get(0).start == 0 || params.instances.get(0).end == 0 ||
-                params.instances.get(0).pourAmounts == null || params.instances.get(0).pourAmounts.length == 0 ||
+                params.instances.get(0).start == 0 || params.instances.get(0).pourAmounts == null
+                || params.instances.get(0).pourAmounts.length == 0 ||
                 params.mapURI == null || params.mapURI.isEmpty() ||
                 params.algorithm == null || params.algorithm.isEmpty();
     }
