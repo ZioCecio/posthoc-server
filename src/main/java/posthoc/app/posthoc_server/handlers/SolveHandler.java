@@ -1,14 +1,14 @@
 package posthoc.app.posthoc_server.handlers;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-
-import com.hstairs.ppmajal.transition.TransitionGround;
+import com.hstairs.ppmajal.PDDLProblem.PDDLSolution;
+import com.hstairs.ppmajal.search.searchnodes.SimpleSearchNode;
 
 import enhsp2.ENHSP;
 import enhsp2.ENHSPBuilder;
@@ -36,17 +36,17 @@ public class SolveHandler {
     public static SolveResponse solveProblem(SolveParams params) {
         // check if params are incomplete (we are setting params from the UI)
         if (isIncomplete(params)) {
+            System.out.println("Incomplete params...");
             // return feedback to posthoc UI
             List<Event> events = partialResponse(params);
             return new SolveResponse(events);
         }
         // otherwise, run the code
-        runCodee(params);
-
-        return runCode(params);
+        // return runCode(params);
+        return runCodee(params);
     }
 
-    private static void runCodee(SolveParams params) {
+    private static SolveResponse runCodee(SolveParams params) {
         String content = getInstanceFile(params);
 
         System.out.println("Running the following instance file\n" + content + "\n\n\n");
@@ -72,13 +72,53 @@ public class SolveHandler {
 
         solver.configurePlanner();
         solver.parsingDomainAndProblem(null);
-        LinkedList<ImmutablePair<BigDecimal, TransitionGround>> solution = solver.planAndGetSolution();
+        PDDLSolution solution = solver.planAndGetSolution();
+        SimpleSearchNode node = solution.lastNode();
+        
+        List<Event> soluionEvents = partialResponse(params);
+        int id = solution.rawPlan().size();
 
-        for(ImmutablePair<BigDecimal, TransitionGround> element : solution) {
-            System.out.println(element);
+        List<Event> reversedEvents = new LinkedList<>();        
+        while(node != null) {
+            if(node.transition == null) break;
+
+            String action = node.transition
+                .toString()
+                .split(" ")[0]
+                .substring(1);
+
+            if(action.contains("move")) {
+                action = "move";
+            } else if(action.equals("load")) {
+                action = "pick";
+            }
+
+            String states = node.s
+                .toString()
+                .trim();
+
+            int x = 0, y = 0;
+            Pattern xPattern = Pattern.compile("\\(x agent1\\)=(\\d+\\.?\\d*)");
+            Pattern yPattern = Pattern.compile("\\(y agent1\\)=(\\d+\\.?\\d*)");
+
+            Matcher xMatcher = xPattern.matcher(states);
+            Matcher yMatcher = yPattern.matcher(states);
+
+            if(xMatcher.find()) {
+                x = (int)Float.parseFloat(xMatcher.group(1));
+            }
+            if(yMatcher.find()) {
+                y = (int)Float.parseFloat(yMatcher.group(1));
+            }
+
+            node = node.father;
+            reversedEvents.add(new Event(action, --id, x, y, (long)id + 1, (double) node.gValue, null));
         }
+        
+        soluionEvents.addAll(reversedEvents.reversed());
+        return new SolveResponse(soluionEvents);
     }
-
+    
     private static SolveResponse runCode(SolveParams params) {
         // create instanceFile
         String content = getInstanceFile(params);
