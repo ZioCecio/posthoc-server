@@ -29,10 +29,9 @@ class Point {
 
 public class SolveHandler {
     private static String domain = "mt-plant-watering-constrained";
-    private static final String BASE_DIR = "/home/ziocecio/Documents/Projects/jpddlplus/";
+    private static final String BASE_DIR = "/home/alessandro/Projects/robotica/jpddlplus/";
     private static final String JAR_FILE = BASE_DIR + "jpddlplus.jar";
     private static final String DOMAIN_FILE = BASE_DIR + "examples/plant-watering/domain.pddl";
-    // private static final String RUN_COMMAND = "java -jar %s -o %s -f %s";
 
     public static SolveResponse solveProblem(SolveParams params) {
         // check if params are incomplete (we are setting params from the UI)
@@ -68,6 +67,7 @@ public class SolveHandler {
             .defaultBuilder()
             .setDomainFile(DOMAIN_FILE)
             .setProblemFile(tempFilePath)
+            .setSearchEngine(params.algorithm)
             .buildAndInitialize();
 
         solver.configurePlanner();
@@ -139,12 +139,28 @@ public class SolveHandler {
     private static boolean isIncomplete(SolveParams params) {
         // Check if any required fields are missing
         return params.instances == null || params.instances.isEmpty() ||
-                params.instances.get(0).plants == null || params.instances.get(0).taps == null ||
-                params.instances.get(0).plants.length == 0 || params.instances.get(0).taps.length == 0 ||
-                params.instances.get(0).start == 0 || params.instances.get(0).pourAmounts == null
-                || params.instances.get(0).pourAmounts.length == 0 ||
+                params.instances.get(0).start == 0 ||
+                !isValidArray(params.instances.get(0).plants) ||
+                !isValidArray(params.instances.get(0).taps) ||
+                !isAllFilled(params.instances.get(0).pourAmounts) ||
                 params.mapURI == null || params.mapURI.isEmpty() ||
                 params.algorithm == null || params.algorithm.isEmpty();
+    }
+
+    private static boolean isAllFilled(Integer[] array){
+        if (!isValidArray(array)) {
+            return false;
+        }
+        for (Integer val : array) {
+            if (val == null || val == 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isValidArray(Integer[] array) {
+        return array != null && array.length > 0;
     }
 
     private static List<Event> partialResponse(SolveParams params) {
@@ -337,37 +353,6 @@ public class SolveHandler {
                         0);
 
                 dynamicEvents.add(event);
-
-                // NOT NECESSARY since in the ui i set the color of pick and pour events
-                // respectively equals to tap and plant colors
-                //
-                //
-                // restore the plant color on the UI map after the move
-                // if (type.equals("move") && plants.stream().anyMatch(p -> p.x == pos.x && p.y
-                // == pos.y)) {
-                // Event plantEvent = new Event(
-                // "plant",
-                // id++,
-                // pos.x,
-                // pos.y,
-                // (long) time,
-                // 0.0,
-                // 0);
-                // dynamicEvents.add(plantEvent);
-                // }
-                // // do the same for taps
-                // if (type.equals("move") && taps.stream().anyMatch(t -> t.x == pos.x && t.y ==
-                // pos.y)) {
-                // Event tapEvent = new Event(
-                // "tap",
-                // id++,
-                // pos.x,
-                // pos.y,
-                // (long) time,
-                // 0.0,
-                // 0);
-                // dynamicEvents.add(tapEvent);
-                // }
 
             } catch (Exception e) {
                 continue;

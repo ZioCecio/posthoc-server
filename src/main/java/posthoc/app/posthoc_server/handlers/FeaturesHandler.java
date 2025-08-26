@@ -1,7 +1,9 @@
 package posthoc.app.posthoc_server.handlers;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import enhsp2.ENHSPBuilder;
 import posthoc.app.posthoc_server.params.FeatureAlgorithmParams;
 import posthoc.app.posthoc_server.params.FeatureFormatParams;
 import posthoc.app.posthoc_server.params.FeatureProblemTypeParams;
@@ -11,6 +13,16 @@ import posthoc.app.posthoc_server.results.FeatureProblemTypeResult;
 
 public class FeaturesHandler {
     public static List<FeatureAlgorithmResult> getAlgorithms(FeatureAlgorithmParams params) {
+        ENHSPBuilder tmp = new ENHSPBuilder(true);
+
+        ArrayList<String> availableSearchEngines = tmp.getAvailableSearchEngines();
+
+        for (String engine : availableSearchEngines) {
+            System.out.println("Available search engine: " + engine);
+        }
+
+        // TODO
+
         return List.of(
                 new FeatureAlgorithmResult("wastar", "WAStar", "Weighted A-Star"),
                 new FeatureAlgorithmResult("idastar", "IDAStar", "Iterative Deepening A-Star"),
