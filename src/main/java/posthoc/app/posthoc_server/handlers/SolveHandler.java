@@ -3,7 +3,7 @@ package posthoc.app.posthoc_server.handlers;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,6 +12,7 @@ import com.hstairs.ppmajal.search.searchnodes.SimpleSearchNode;
 
 import enhsp2.ENHSP;
 import enhsp2.ENHSPBuilder;
+import posthoc.app.posthoc_server.loggers.PosthocStateLogger;
 import posthoc.app.posthoc_server.params.SolveInstance;
 import posthoc.app.posthoc_server.params.SolveParams;
 import posthoc.app.posthoc_server.results.solve.Event;
@@ -29,8 +30,7 @@ class Point {
 
 public class SolveHandler {
     private static String domain = "mt-plant-watering-constrained";
-    private static final String BASE_DIR = "/home/alessandro/Projects/robotica/jpddlplus/";
-    private static final String JAR_FILE = BASE_DIR + "jpddlplus.jar";
+    private static final String BASE_DIR = "/home/ziocecio/Documents/Projects/jpddlplus/";
     private static final String DOMAIN_FILE = BASE_DIR + "examples/plant-watering/domain.pddl";
 
     public static SolveResponse solveProblem(SolveParams params) {
@@ -42,11 +42,10 @@ public class SolveHandler {
             return new SolveResponse(events);
         }
         // otherwise, run the code
-        // return runCode(params);
-        return runCodee(params);
+        return runCode(params);
     }
 
-    private static SolveResponse runCodee(SolveParams params) {
+    private static SolveResponse runCode(SolveParams params) {
         String content = getInstanceFile(params);
 
         System.out.println("Running the following instance file\n" + content + "\n\n\n");
@@ -63,20 +62,20 @@ public class SolveHandler {
             throw new RuntimeException("Failed to create/write temp instance file", e);
         }
 
+        PosthocStateLogger logger = new PosthocStateLogger();
         ENHSP solver = new ENHSPBuilder(true)
             .defaultBuilder()
             .setDomainFile(DOMAIN_FILE)
             .setProblemFile(tempFilePath)
             .setSearchEngine(params.algorithm)
+            .setExternalLogger(logger)
             .buildAndInitialize();
 
         solver.configurePlanner();
         solver.parsingDomainAndProblem(null);
         PDDLSolution solution = solver.planAndGetSolution();
         SimpleSearchNode node = solution.lastNode();
-        
         List<Event> soluionEvents = partialResponse(params);
-        int id = solution.rawPlan().size();
 
         List<Event> reversedEvents = new LinkedList<>();        
         while(node != null) {
@@ -105,77 +104,25 @@ public class SolveHandler {
             Matcher yMatcher = yPattern.matcher(states);
 
             if(xMatcher.find()) {
-                x = (int)Float.parseFloat(xMatcher.group(1));
+                x = (int)Float.parseFloat(xMatcher.group(1)) - 1;
             }
             if(yMatcher.find()) {
-                y = (int)Float.parseFloat(yMatcher.group(1));
+                y = (int)Float.parseFloat(yMatcher.group(1)) - 1;
             }
 
+            reversedEvents.add(new Event(action, node.id, x, y, node.father.id, (double) node.gValue, null));
             node = node.father;
-            reversedEvents.add(new Event(action, --id, x, y, (long)id + 1, (double) node.gValue, null));
         }
         
-        soluionEvents.addAll(reversedEvents.reversed());
+        if(params.instances.get(0).getSolutionOnly) {
+            soluionEvents.addAll(reversedEvents.reversed());
+        } else {
+            soluionEvents.addAll(logger.getLoggedEvents());
+        }
+
         return new SolveResponse(soluionEvents);
     }
     
-    private static SolveResponse runCode(SolveParams params) {
-        // create instanceFile
-        String content = getInstanceFile(params);
-
-        // run the ENHSP jar file and get the response
-        System.out.println("Running the following instance file\n" + content + "\n\n\n");
-
-        // create a temporary file and write the content to it
-        java.nio.file.Path tempFile;
-        String tempFilePath;
-        try {
-            tempFile = java.nio.file.Files.createTempFile("instance-", ".pddl");
-            java.nio.file.Files.write(tempFile, content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            tempFilePath = tempFile.toAbsolutePath().toString();
-            System.out.println("Instance file written to: " + tempFilePath);
-
-        } catch (java.io.IOException e) {
-            throw new RuntimeException("Failed to create/write temp instance file", e);
-        }
-
-        // run the command and capture the output
-        List<String> command = new ArrayList<>();
-        command.add("java");
-        command.add("-jar");
-        command.add(JAR_FILE);
-        command.add("-o");
-        command.add(DOMAIN_FILE);
-        command.add("-f");
-        command.add(tempFilePath);
-
-        System.out.println("Running command: " + String.join(" ", command));
-
-        ProcessBuilder processBuilder = new ProcessBuilder(command);
-        processBuilder.redirectErrorStream(true); // merge stderr into stdout
-
-        ArrayList<String> results = new ArrayList<>();
-        try {
-            Process process = processBuilder.start();
-            java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(process.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                results.add(line);
-            }
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                throw new RuntimeException(
-                        "ENHSP process exited with code " + exitCode + "\nOutput:\n" + String.join("\n", results));
-            }
-            System.out.println("ENHSP output:\n" + String.join("\n", results));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to run ENHSP command", e);
-        }
-
-        return parseResult(results, params);
-    }
-
     private static boolean isIncomplete(SolveParams params) {
         // Check if any required fields are missing
         return params.instances == null || params.instances.isEmpty() ||
@@ -205,9 +152,7 @@ public class SolveHandler {
 
     private static List<Event> partialResponse(SolveParams params) {
         List<Event> dynamicEvents = new ArrayList<>();
-
         int mapLen = params.getMapLen();
-        int id = 100;
 
         Integer start = params.instances.get(0).start;
         Integer end = params.instances.get(0).end;
@@ -216,25 +161,25 @@ public class SolveHandler {
 
         if (start != null && start != 0) {
             Point p = new Point(start.intValue(), mapLen);
-            dynamicEvents.add(new Event("source", id++, p.x, p.y, 0L, 0.0, 0));
+            dynamicEvents.add(new Event("source", UUID.randomUUID(), p.x, p.y, null, 0.0, 0));
         }
 
         if (end != null && end != 0) {
             Point p = new Point(end.intValue(), mapLen);
-            dynamicEvents.add(new Event("destination", id++, p.x, p.y, 0L, 0.0, 0));
+            dynamicEvents.add(new Event("destination", UUID.randomUUID(), p.x, p.y, null, 0.0, 0));
         }
 
         if (plants != null && plants.length > 0) {
             for (Integer plant : plants) {
                 Point p = new Point(plant.intValue(), mapLen);
-                dynamicEvents.add(new Event("plant", id++, p.x, p.y, 0L, 0.0, 0));
+                dynamicEvents.add(new Event("plant", UUID.randomUUID(), p.x, p.y, null, 0.0, 0));
             }
         }
 
         if (taps != null && taps.length > 0) {
             for (Integer tap : taps) {
                 Point p = new Point(tap.intValue(), mapLen);
-                dynamicEvents.add(new Event("tap", id++, p.x, p.y, 0L, 0.0, 0));
+                dynamicEvents.add(new Event("tap", UUID.randomUUID(), p.x, p.y, null, 0.0, 0));
             }
         }
 
@@ -318,87 +263,5 @@ public class SolveHandler {
         sb.append("  ))\n");
         sb.append(")\n");
         return sb.toString();
-    }
-
-    private static SolveResponse parseResult(List<String> results, SolveParams params) {
-        // starting with base events (start, end, plants, taps)
-        List<Event> dynamicEvents = partialResponse(params);
-        int id = 100 + dynamicEvents.size(); // use the next available id
-
-        // Starting position of the agent
-        Point pos = new Point(params.instances.get(0).start, params.getMapLen());
-        ArrayList<Point> plants = new ArrayList<>();
-        for (Integer plant : params.instances.get(0).plants) {
-            plants.add(new Point(plant, params.getMapLen()));
-        }
-        ArrayList<Point> taps = new ArrayList<>();
-        for (Integer tap : params.instances.get(0).taps) {
-            taps.add(new Point(tap, params.getMapLen()));
-        }
-
-        for (String line : results) {
-            line = line.trim();
-            if (line.isEmpty() || !line.contains(": (")) {
-                continue;
-            }
-
-            try {
-                // Extract time and action
-                String[] parts = line.split(":\\s+\\(");
-                double time = Double.parseDouble(parts[0]);
-                String actionPart = parts[1].replace(")", "").trim();
-                String[] tokens = actionPart.split("\\s+");
-
-                if (tokens.length < 2)
-                    continue;
-
-                String action = tokens[0];
-                String type;
-
-                Map<String, int[]> directionMap = Map.of(
-                        "move_up", new int[] { 0, 1 },
-                        "move_down", new int[] { 0, -1 },
-                        "move_left", new int[] { -1, 0 },
-                        "move_right", new int[] { 1, 0 },
-                        "move_up_left", new int[] { -1, 1 },
-                        "move_up_right", new int[] { 1, 1 },
-                        "move_down_left", new int[] { -1, -1 },
-                        "move_down_right", new int[] { 1, -1 });
-
-                if (directionMap.containsKey(action)) {
-                    int[] delta = directionMap.get(action);
-                    pos.x += delta[0];
-                    pos.y += delta[1];
-                    type = "move";
-                } else {
-                    switch (action) {
-                        case "load":
-                            type = "pick";
-                            break;
-                        case "pour":
-                            type = "pour";
-                            break;
-                        default:
-                            continue;
-                    }
-                }
-
-                Event event = new Event(
-                        type,
-                        id++,
-                        pos.x,
-                        pos.y,
-                        (long) time,
-                        0.0,
-                        0);
-
-                dynamicEvents.add(event);
-
-            } catch (Exception e) {
-                continue;
-            }
-        }
-
-        return new SolveResponse(dynamicEvents);
     }
 }

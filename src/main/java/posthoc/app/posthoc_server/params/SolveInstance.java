@@ -6,6 +6,7 @@ public class SolveInstance {
     public Integer[] plants;
     public Integer[] taps;
     public Integer[] pourAmounts;
+    public Boolean getSolutionOnly;
 
     public String toString() {
         return "SolveInstance{" +
@@ -14,6 +15,7 @@ public class SolveInstance {
                 ", plants=" + java.util.Arrays.toString(plants) +
                 ", taps=" + java.util.Arrays.toString(taps) +
                 ", pourAmounts=" + java.util.Arrays.toString(pourAmounts) +
+                ", getSolutionOnly=" + getSolutionOnly +
                 '}';
     }
 }
