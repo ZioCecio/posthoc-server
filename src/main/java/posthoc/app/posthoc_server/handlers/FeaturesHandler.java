@@ -9,25 +9,34 @@ import posthoc.app.posthoc_server.params.FeatureFormatParams;
 import posthoc.app.posthoc_server.params.FeatureProblemTypeParams;
 import posthoc.app.posthoc_server.results.FeatureAlgorithmResult;
 import posthoc.app.posthoc_server.results.FeatureFormatResult;
+import posthoc.app.posthoc_server.results.FeatureHeuristicResult;
 import posthoc.app.posthoc_server.results.FeatureProblemTypeResult;
 
 public class FeaturesHandler {
     public static List<FeatureAlgorithmResult> getAlgorithms(FeatureAlgorithmParams params) {
         ENHSPBuilder tmp = new ENHSPBuilder(true);
 
-        ArrayList<String> availableSearchEngines = tmp.getAvailableSearchEngines();
+        String[][] availableSearchEngines = tmp.getAvailableSearchEngines();
 
-        for (String engine : availableSearchEngines) {
-            System.out.println("Available search engine: " + engine);
+        ArrayList<FeatureAlgorithmResult> results = new ArrayList<>();
+        for (String[] engine : availableSearchEngines) {
+            results.add(new FeatureAlgorithmResult(engine[0], engine[1], engine[2]));
         }
 
-        // TODO
+        return results;
+    }
 
-        return List.of(
-                new FeatureAlgorithmResult("wastar", "WAStar", "Weighted A-Star"),
-                new FeatureAlgorithmResult("idastar", "IDAStar", "Iterative Deepening A-Star"),
-                new FeatureAlgorithmResult("lwastar", "LazyWAStar", "Lazy Weighted A-Star"),
-                new FeatureAlgorithmResult("ehs", "EHS", "Enhanced Harmony Search"));
+    public static List<FeatureHeuristicResult> getHeuristics(FeatureAlgorithmParams params) {
+        ENHSPBuilder tmp = new ENHSPBuilder(true);
+
+        String[][] availableHeuristics = tmp.getAvailableHeuristics();
+
+        ArrayList<FeatureHeuristicResult> results = new ArrayList<>();
+        for (String[] heuristic : availableHeuristics) {
+            results.add(new FeatureHeuristicResult(heuristic[0], heuristic[1], heuristic[2]));
+        }
+
+        return results;
     }
 
     public static List<FeatureFormatResult> getFormats(FeatureFormatParams params) {

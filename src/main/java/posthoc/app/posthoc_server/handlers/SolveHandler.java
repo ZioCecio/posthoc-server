@@ -30,7 +30,7 @@ class Point {
 
 public class SolveHandler {
     private static String domain = "mt-plant-watering-constrained";
-    private static final String BASE_DIR = "/home/ziocecio/Documents/Projects/jpddlplus/";
+    private static final String BASE_DIR = "/home/alessandro/Projects/robotica/jpddlplus/";
     private static final String DOMAIN_FILE = BASE_DIR + "examples/plant-watering/domain.pddl";
 
     public static SolveResponse solveProblem(SolveParams params) {
@@ -68,6 +68,7 @@ public class SolveHandler {
             .setDomainFile(DOMAIN_FILE)
             .setProblemFile(tempFilePath)
             .setSearchEngine(params.algorithm)
+            .setHeuristic(params.heuristic)
             .setExternalLogger(logger)
             .buildAndInitialize();
 
@@ -75,7 +76,7 @@ public class SolveHandler {
         solver.parsingDomainAndProblem(null);
         PDDLSolution solution = solver.planAndGetSolution();
         SimpleSearchNode node = solution.lastNode();
-        List<Event> soluionEvents = partialResponse(params);
+        List<Event> solutionEvents = partialResponse(params);
 
         List<Event> reversedEvents = new LinkedList<>();        
         while(node != null) {
@@ -115,12 +116,12 @@ public class SolveHandler {
         }
         
         if(params.instances.get(0).getSolutionOnly) {
-            soluionEvents.addAll(reversedEvents.reversed());
+            solutionEvents.addAll(reversedEvents.reversed());
         } else {
-            soluionEvents.addAll(logger.getLoggedEvents());
+            solutionEvents.addAll(logger.getLoggedEvents());
         }
 
-        return new SolveResponse(soluionEvents);
+        return new SolveResponse(solutionEvents);
     }
     
     private static boolean isIncomplete(SolveParams params) {
@@ -131,7 +132,8 @@ public class SolveHandler {
                 !isValidArray(params.instances.get(0).taps) ||
                 !isAllFilled(params.instances.get(0).pourAmounts) ||
                 params.mapURI == null || params.mapURI.isEmpty() ||
-                params.algorithm == null || params.algorithm.isEmpty();
+                params.algorithm == null || params.algorithm.isEmpty() ||
+                params.heuristic == null || params.heuristic.isEmpty();
     }
 
     private static boolean isAllFilled(Integer[] array){
