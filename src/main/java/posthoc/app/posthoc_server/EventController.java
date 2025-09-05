@@ -34,6 +34,7 @@ public class EventController {
     public EventController(SocketIOServer server) {
         register("about", AboutParams.class, AboutHandler::getInfo);
         register("features/algorithms", FeatureAlgorithmParams.class, FeaturesHandler::getAlgorithms);
+        register("features/heuristics", FeatureAlgorithmParams.class, FeaturesHandler::getHeuristics);
         register("features/problemTypes", FeatureProblemTypeParams.class, FeaturesHandler::getProblemTypes);
         register("features/formats", FeatureFormatParams.class, FeaturesHandler::getFormats);
         register("solve/pathfinding", SolveParams.class, SolveHandler::solveProblem);

@@ -38,6 +38,7 @@ public class SolveResponse {
 
         components.tile = tiles;
         render.components = components;
+        render.path = new Path(new Pivot("{{$.event.x + 0.5}}", "{{$.event.y + 0.5}}"), 0.3);
 
         // Build views
         View mainView = new View();

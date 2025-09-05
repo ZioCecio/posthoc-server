@@ -8,6 +8,7 @@ public class SolveParams {
     public List<SolveInstance> instances;
     public String mapURI;
     public String algorithm;
+    public String heuristic;
 
     public String toString() {
         return "SolveParams{" +
@@ -15,6 +16,7 @@ public class SolveParams {
                 ", instances=" + instances +
                 ", mapURI='" + mapURI + '\'' +
                 ", algorithm='" + algorithm + '\'' +
+                ", heuristic='" + heuristic + '\'' +
                 '}';
     }
 
