@@ -30,8 +30,7 @@ class Point {
 
 public class SolveHandler {
     private static String domain = "mt-plant-watering-constrained";
-    private static final String BASE_DIR = "/home/alessandro/Projects/robotica/jpddlplus/";
-    private static final String DOMAIN_FILE = BASE_DIR + "examples/plant-watering/domain.pddl";
+    private static final String DOMAIN_FILE = "examples/plant-watering/domain.pddl";
 
     public static SolveResponse solveProblem(SolveParams params) {
         // check if params are incomplete (we are setting params from the UI)
